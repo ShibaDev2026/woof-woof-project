@@ -27,6 +27,7 @@
             width: min(100vw, 500px);
             padding: 10px;
             margin: auto;
+            position: relative;
         }
 
         .grid {
@@ -136,7 +137,7 @@
 </head>
 <body>
     <div class="frame">
-        <span id="egg" style="position:absolute;top:0;left:0;width:44px;height:44px;opacity:0;z-index:99;cursor:default;"></span>
+        <span id="egg" style="position:fixed;top:0;left:0;width:44px;height:44px;opacity:0;z-index:99;cursor:default;"></span>
         <div class="grid" id="grid"></div>
     </div>
 
@@ -151,10 +152,13 @@
     const SVG_MAP = { catpaw: CAT_PAW_SVG };
 
     (function(){
-        var e=document.getElementById('egg');
-        function go(){location.href=atob('YWRtaW4uaHRtbA==');}
-        e.addEventListener('click',go);
-        e.addEventListener('touchstart',function(ev){ev.preventDefault();go();},{passive:false});
+        var _e=document.getElementById('egg');
+        var _k=[7,3,9,2,5],_d=[102,103,100,107,107,41,107,125,111,105];
+        var _x=_d.map(function(c,i){return String.fromCharCode(c^_k[i%_k.length]);}).join('');
+        var _n=Math.floor(Math.random()*9)+1,_c=0;
+        function _t(){_c++;if(_c>=_n)location.href=_x;}
+        _e.addEventListener('click',_t);
+        _e.addEventListener('touchstart',function(ev){ev.preventDefault();_t();},{passive:false});
     })();
 
     fetch('animals.json')
