@@ -1,0 +1,7 @@
+node_modules/
+public/sounds/*.mp3
+woof-darwin-arm64
+woof_track_source/
+
+.DS_Store
+**/.DS_Store

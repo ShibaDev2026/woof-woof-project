@@ -1,0 +1,41 @@
+{
+  "audioFile": "loop_woof_woof_loop.mp3",
+  "gapThreshold": 0.08,
+  "phrases": [
+    {
+      "type": "sweep",
+      "start": 0.023,
+      "end": 0.418
+    },
+    {
+      "type": "outer",
+      "start": 0.534,
+      "end": 0.697
+    },
+    {
+      "type": "sweep",
+      "start": 1.022,
+      "end": 1.416
+    },
+    {
+      "type": "outer",
+      "start": 1.533,
+      "end": 1.695
+    },
+    {
+      "type": "outer",
+      "start": 1.927,
+      "end": 2.078
+    },
+    {
+      "type": "outer",
+      "start": 2.252,
+      "end": 2.368
+    },
+    {
+      "type": "outer",
+      "start": 2.543,
+      "end": 2.682
+    }
+  ]
+}

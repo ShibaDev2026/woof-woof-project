@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>喵喵與汪汪的Loop Woof Woof</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100dvh;
+            overflow: hidden;
+            background: #0a0a0f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .frame {
+            width: min(100vw, 100dvh);
+            height: min(100vw, 100dvh);
+            padding: 10px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            border-radius: 28px;
+            box-shadow: 0 0 40px rgba(100, 60, 255, 0.3), 0 0 80px rgba(100, 60, 255, 0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            width: 100%;
+            height: 100%;
+            gap: 8px;
+        }
+
+        .box {
+            border-radius: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(60px, 15vw, 130px);
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.1s;
+        }
+
+        .box-empty {
+            background: #1e1e2e;
+            font-size: clamp(40px, 10vw, 90px);
+            color: #555;
+            border-color: #333;
+        }
+
+        .box-cat     { background: linear-gradient(145deg, #c026d3, #a855f7); border-color: #e879f9; box-shadow: 0 0 20px rgba(168,85,247,0.5), inset 0 1px 0 rgba(255,255,255,0.15); }
+        .box-dog     { background: linear-gradient(145deg, #ea4c00, #ff6b35); border-color: #fb923c; box-shadow: 0 0 20px rgba(255,107,53,0.5), inset 0 1px 0 rgba(255,255,255,0.15); }
+        .box-pikachu { background: linear-gradient(145deg, #ca8a04, #eab308); border-color: #facc15; box-shadow: 0 0 20px rgba(234,179,8,0.5),  inset 0 1px 0 rgba(255,255,255,0.15); }
+
+        /* 跳動 */
+        @keyframes bounce {
+            0%   { transform: scale(1)    rotate(0deg); }
+            20%  { transform: scale(1.25) rotate(-8deg); }
+            40%  { transform: scale(0.9)  rotate(6deg); }
+            60%  { transform: scale(1.15) rotate(-4deg); }
+            80%  { transform: scale(0.95) rotate(2deg); }
+            100% { transform: scale(1)    rotate(0deg); }
+        }
+
+        .char-emoji { display: inline-block; }
+        .char-emoji.bouncing { animation: bounce 0.5s ease-out forwards; }
+
+        /* 漣漪 */
+        @keyframes ripple {
+            0%   { transform: scale(0); opacity: 0.5; }
+            100% { transform: scale(4); opacity: 0; }
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            width: 100px;
+            height: 100px;
+            margin-top: -50px;
+            margin-left: -50px;
+            pointer-events: none;
+            animation: ripple 0.55s ease-out forwards;
+        }
+
+        /* 閃光 */
+        @keyframes flash {
+            0%   { filter: brightness(1);   }
+            30%  { filter: brightness(1.6); }
+            100% { filter: brightness(1);   }
+        }
+
+        .box.flashing { animation: flash 0.45s ease-out forwards; }
+
+        /* 方框內覆蓋符號動畫 */
+        @keyframes symbol-pop {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-15deg); }
+            28%  { opacity: 1; transform: translate(-50%, -50%) scale(1.2)  rotate(6deg);  }
+            58%  { opacity: 1; transform: translate(-50%, -50%) scale(1)    rotate(0deg);  }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5)  rotate(8deg);  }
+        }
+
+        .box-symbol {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: min(42vw, 42dvh);
+            line-height: 1;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .box-symbol.popping {
+            animation: symbol-pop 0.8s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="frame">
+    <div class="grid">
+        <div class="box box-cat"     data-href="game.html?char=cat"
+             data-symbol-svg="true" data-glow="#C084FC">
+            <span class="char-emoji">🐱</span>
+            <span class="box-symbol" style="filter: drop-shadow(0 0 24px #C084FC) drop-shadow(0 0 48px #A855F7); width:min(42vw,42dvh); height:min(42vw,42dvh);">
+                <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                    <circle cx="22" cy="28" r="13" fill="white" opacity="0.92"/>
+                    <circle cx="50" cy="18" r="13" fill="white" opacity="0.92"/>
+                    <circle cx="78" cy="28" r="13" fill="white" opacity="0.92"/>
+                    <ellipse cx="50" cy="72" rx="26" ry="22" fill="white"/>
+                </svg>
+            </span>
+        </div>
+        <div class="box box-dog"     data-href="game.html?char=dog"
+             data-symbol="🐾" data-glow="#FF69B4">
+            <span class="char-emoji">🐕</span>
+            <span class="box-symbol" style="filter: drop-shadow(0 0 24px #FF69B4) drop-shadow(0 0 48px #FF1493);"></span>
+        </div>
+        <div class="box box-pikachu" data-href="game.html?char=pikachu"
+             data-symbol="⚡" data-glow="#FDE047">
+            <span class="char-emoji">⚡</span>
+            <span class="box-symbol" style="filter: drop-shadow(0 0 24px #FDE047) drop-shadow(0 0 48px #F59E0B);"></span>
+        </div>
+        <div class="box box-empty"
+             data-href="game.html?char=question"
+             data-symbol="❓" data-glow="#60A5FA">
+            <span class="char-emoji">❓</span>
+            <span class="box-symbol" style="filter: drop-shadow(0 0 24px #60A5FA) drop-shadow(0 0 48px #3B82F6);"></span>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.box').forEach(function(box) {
+            var charEmoji = box.querySelector('.char-emoji');
+            var symbol    = box.querySelector('.box-symbol');
+            var href      = box.dataset.href;
+
+            function handleTap(e) {
+                // 漣漪
+                var ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                var rect = box.getBoundingClientRect();
+                var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+                var y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+                ripple.style.left = x + 'px';
+                ripple.style.top  = y + 'px';
+                box.appendChild(ripple);
+                ripple.addEventListener('animationend', function() { ripple.remove(); });
+
+                // 跳動
+                charEmoji.classList.remove('bouncing');
+                void charEmoji.offsetWidth;
+                charEmoji.classList.add('bouncing');
+
+                // 閃光
+                box.classList.remove('flashing');
+                void box.offsetWidth;
+                box.classList.add('flashing');
+
+                // 方框內符號動畫（SVG 類型保留原內容，emoji 類型設定文字）
+                if (!box.dataset.symbolSvg) symbol.textContent = box.dataset.symbol;
+                symbol.classList.remove('popping');
+                void symbol.offsetWidth;
+                symbol.classList.add('popping');
+
+                if (href) {
+                    setTimeout(function() { location.href = href; }, 820);
+                }
+            }
+
+            box.addEventListener('click', handleTap);
+            box.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                handleTap(e);
+            }, { passive: false });
+        });
+    </script>
+</body>
+</html>
