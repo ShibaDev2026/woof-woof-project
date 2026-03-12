@@ -11,47 +11,46 @@ document.addEventListener('DOMContentLoaded', () => {
     var blackLayerWidthPx = blackLayerWidthCm * (dpi / 2.54); // 黑色間隔層的寬度（像素）
     var innerBlackCircleRadiusPx = (innerBlackCircleDiameterCm * (dpi / 2.54)) / 2; // 最內圈的黑色圓圈半徑（像素）
 
-    // 依 URL ?char= 參數決定音效，未來新增角色只需在此擴充
-    var charMap = {
-        dog:      'loop_woof_woof_loop',
-        cat:      'meow_loop',
-        pikachu:  'pikachu_loop',
-        question: 'question_loop'
-    };
     var char = new URLSearchParams(location.search).get('char') || 'dog';
-    var baseName  = charMap[char] || charMap['dog'];
-    var audioFile = 'sounds/' + baseName + '.mp3';
-
-    // 使用 <audio> 元素播放，iOS 相容性最佳
-    var audio = new Audio(audioFile);
-    audio.preload = 'auto';
-    audio.addEventListener('ended', function () {
-        colors = initialColors.slice();
-        drawLayers();
-    });
-
-    function playAudio() {
-        audio.currentTime = 0;
-        audio.play().catch(() => {});
-    }
+    var baseName = char; // 預設值，animals.json 載入後更新
 
     var initialColors = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#1E90FF', '#004ff5', '#8A2BE2', '#FF007F'];
     var colors = initialColors.slice();
     var brightnessIncrease = 50;
-    var outerBrightnessIncrease = 130; // woof 最外圈閃爍亮度
-    var DOUBLE_FLASH_GAP = 0.06; // outer 兩次閃爍之間的間隔（秒）
+    var outerBrightnessIncrease = 130;
+    var DOUBLE_FLASH_GAP = 0.06;
 
     var pendingTimeouts = [];
-    var schedule = []; // { time, layerIdx, flashDuration } 的陣列
+    var schedule = [];
 
-    // 載入與 mp3 同名的 config JSON（從 frequencies/ 目錄）
-    var configFile = 'frequencies/' + baseName + '.json';
-    fetch(configFile)
+    // 使用 <audio> 元素播放，iOS 相容性最佳
+    var audio = null;
+    function initAudio(name) {
+        audio = new Audio('sounds/' + name + '.mp3');
+        audio.preload = 'auto';
+        audio.addEventListener('ended', function () {
+            colors = initialColors.slice();
+            drawLayers();
+        });
+    }
+    function playAudio() {
+        if (!audio) return;
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+    }
+
+    // 從 animals.json 取得 sound 欄位，再載入音訊與排程
+    fetch('animals.json')
         .then(r => r.json())
-        .then(config => {
-            schedule = buildSchedule(config.phrases, initialColors.length);
+        .then(data => {
+            var animal = data.animals.find(a => a.id === char);
+            baseName = (animal && animal.sound) ? animal.sound : char;
+            initAudio(baseName);
+            return fetch('frequencies/' + baseName + '.json');
         })
-        .catch(() => {})
+        .then(r => r.json())
+        .then(config => { schedule = buildSchedule(config.phrases, initialColors.length); })
+        .catch(() => { if (!audio) initAudio(baseName); })
         .finally(() => { drawLayers(); });
 
     // 依 config phrases 建立動畫排程

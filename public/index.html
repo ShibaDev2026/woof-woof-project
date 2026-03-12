@@ -7,37 +7,36 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; }
 
-        body {
+        html, body {
             margin: 0;
             padding: 0;
+            background: #000;
+        }
+
+        body {
             width: 100vw;
-            height: 100dvh;
-            overflow: hidden;
-            background: #0a0a0f;
+            min-height: 100dvh;
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
         }
 
         .frame {
-            width: min(100vw, 100dvh);
-            height: min(100vw, 100dvh);
+            width: min(100vw, 500px);
             padding: 10px;
-            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
-            border-radius: 28px;
-            box-shadow: 0 0 40px rgba(100, 60, 255, 0.3), 0 0 80px rgba(100, 60, 255, 0.1);
+            margin: auto;
         }
 
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            width: 100%;
-            height: 100%;
             gap: 8px;
         }
 
         .box {
+            aspect-ratio: 1;
             border-radius: 18px;
             display: flex;
             justify-content: center;
@@ -49,19 +48,22 @@
             overflow: hidden;
             cursor: pointer;
             border: 3px solid transparent;
-            transition: transform 0.1s;
         }
 
-        .box-empty {
-            background: #1e1e2e;
+        .box img.char-img {
+            width: 60%;
+            height: 60%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .box-locked {
+            background: #1e1e2e !important;
+            border-color: #333 !important;
+            box-shadow: none !important;
             font-size: clamp(40px, 10vw, 90px);
             color: #555;
-            border-color: #333;
         }
-
-        .box-cat     { background: linear-gradient(145deg, #c026d3, #a855f7); border-color: #e879f9; box-shadow: 0 0 20px rgba(168,85,247,0.5), inset 0 1px 0 rgba(255,255,255,0.15); }
-        .box-dog     { background: linear-gradient(145deg, #ea4c00, #ff6b35); border-color: #fb923c; box-shadow: 0 0 20px rgba(255,107,53,0.5), inset 0 1px 0 rgba(255,255,255,0.15); }
-        .box-pikachu { background: linear-gradient(145deg, #ca8a04, #eab308); border-color: #facc15; box-shadow: 0 0 20px rgba(234,179,8,0.5),  inset 0 1px 0 rgba(255,255,255,0.15); }
 
         /* 跳動 */
         @keyframes bounce {
@@ -73,8 +75,8 @@
             100% { transform: scale(1)    rotate(0deg); }
         }
 
-        .char-emoji { display: inline-block; }
-        .char-emoji.bouncing { animation: bounce 0.5s ease-out forwards; }
+        .char-display { display: inline-block; }
+        .char-display.bouncing { animation: bounce 0.5s ease-out forwards; }
 
         /* 漣漪 */
         @keyframes ripple {
@@ -103,7 +105,7 @@
 
         .box.flashing { animation: flash 0.45s ease-out forwards; }
 
-        /* 方框內覆蓋符號動畫 */
+        /* 符號動畫 */
         @keyframes symbol-pop {
             0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-15deg); }
             28%  { opacity: 1; transform: translate(-50%, -50%) scale(1.2)  rotate(6deg);  }
@@ -122,6 +124,11 @@
             opacity: 0;
         }
 
+        .box-symbol svg {
+            width: min(42vw, 42dvh);
+            height: min(42vw, 42dvh);
+        }
+
         .box-symbol.popping {
             animation: symbol-pop 0.8s ease-out forwards;
         }
@@ -129,83 +136,109 @@
 </head>
 <body>
     <div class="frame">
-    <div class="grid">
-        <div class="box box-cat"     data-href="game.html?char=cat"
-             data-symbol-svg="true" data-glow="#C084FC">
-            <span class="char-emoji">🐱</span>
-            <span class="box-symbol" style="filter: drop-shadow(0 0 24px #C084FC) drop-shadow(0 0 48px #A855F7); width:min(42vw,42dvh); height:min(42vw,42dvh);">
-                <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-                    <circle cx="22" cy="28" r="13" fill="white" opacity="0.92"/>
-                    <circle cx="50" cy="18" r="13" fill="white" opacity="0.92"/>
-                    <circle cx="78" cy="28" r="13" fill="white" opacity="0.92"/>
-                    <ellipse cx="50" cy="72" rx="26" ry="22" fill="white"/>
-                </svg>
-            </span>
-        </div>
-        <div class="box box-dog"     data-href="game.html?char=dog"
-             data-symbol="🐾" data-glow="#FF69B4">
-            <span class="char-emoji">🐕</span>
-            <span class="box-symbol" style="filter: drop-shadow(0 0 24px #FF69B4) drop-shadow(0 0 48px #FF1493);"></span>
-        </div>
-        <div class="box box-pikachu" data-href="game.html?char=pikachu"
-             data-symbol="⚡" data-glow="#FDE047">
-            <span class="char-emoji">⚡</span>
-            <span class="box-symbol" style="filter: drop-shadow(0 0 24px #FDE047) drop-shadow(0 0 48px #F59E0B);"></span>
-        </div>
-        <div class="box box-empty"
-             data-href="game.html?char=question"
-             data-symbol="❓" data-glow="#60A5FA">
-            <span class="char-emoji">❓</span>
-            <span class="box-symbol" style="filter: drop-shadow(0 0 24px #60A5FA) drop-shadow(0 0 48px #3B82F6);"></span>
-        </div>
-    </div>
+        <span id="egg" style="position:absolute;top:0;left:0;width:44px;height:44px;opacity:0;z-index:99;cursor:default;"></span>
+        <div class="grid" id="grid"></div>
     </div>
 
     <script>
-        document.querySelectorAll('.box').forEach(function(box) {
-            var charEmoji = box.querySelector('.char-emoji');
-            var symbol    = box.querySelector('.box-symbol');
-            var href      = box.dataset.href;
+    const CAT_PAW_SVG = `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="22" cy="28" r="13" fill="white" opacity="0.92"/>
+        <circle cx="50" cy="18" r="13" fill="white" opacity="0.92"/>
+        <circle cx="78" cy="28" r="13" fill="white" opacity="0.92"/>
+        <ellipse cx="50" cy="72" rx="26" ry="22" fill="white"/>
+    </svg>`;
 
-            function handleTap(e) {
-                // 漣漪
-                var ripple = document.createElement('span');
-                ripple.className = 'ripple';
-                var rect = box.getBoundingClientRect();
-                var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-                var y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-                ripple.style.left = x + 'px';
-                ripple.style.top  = y + 'px';
-                box.appendChild(ripple);
-                ripple.addEventListener('animationend', function() { ripple.remove(); });
+    const SVG_MAP = { catpaw: CAT_PAW_SVG };
 
-                // 跳動
-                charEmoji.classList.remove('bouncing');
-                void charEmoji.offsetWidth;
-                charEmoji.classList.add('bouncing');
+    (function(){
+        var e=document.getElementById('egg');
+        function go(){location.href=atob('YWRtaW4uaHRtbA==');}
+        e.addEventListener('click',go);
+        e.addEventListener('touchstart',function(ev){ev.preventDefault();go();},{passive:false});
+    })();
 
-                // 閃光
-                box.classList.remove('flashing');
-                void box.offsetWidth;
-                box.classList.add('flashing');
+    fetch('animals.json')
+        .then(r => r.json())
+        .then(data => buildGrid(data.animals))
+        .catch(() => console.error('載入 animals.json 失敗'));
 
-                // 方框內符號動畫（SVG 類型保留原內容，emoji 類型設定文字）
-                if (!box.dataset.symbolSvg) symbol.textContent = box.dataset.symbol;
-                symbol.classList.remove('popping');
-                void symbol.offsetWidth;
-                symbol.classList.add('popping');
+    function buildGrid(animals) {
+        const grid = document.getElementById('grid');
+        animals.forEach(animal => grid.appendChild(createBox(animal)));
+    }
 
-                if (href) {
-                    setTimeout(function() { location.href = href; }, 820);
-                }
-            }
+    function createBox(animal) {
+        const box = document.createElement('div');
+        box.className = 'box' + (animal.locked ? ' box-locked' : '');
+        if (!animal.locked) {
+            box.style.cssText =
+                `background: linear-gradient(145deg, ${animal.bgFrom}, ${animal.bgTo});` +
+                `border-color: ${animal.border};` +
+                `box-shadow: 0 0 20px ${animal.glow1}80, inset 0 1px 0 rgba(255,255,255,0.15);`;
+        }
 
-            box.addEventListener('click', handleTap);
-            box.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                handleTap(e);
-            }, { passive: false });
-        });
+        // 顯示角色（圖片或 emoji）
+        const charDisplay = document.createElement('span');
+        charDisplay.className = 'char-display';
+        if (animal.image) {
+            const img = document.createElement('img');
+            img.className = 'char-img';
+            img.src = animal.image;
+            img.alt = animal.id;
+            charDisplay.appendChild(img);
+        } else {
+            charDisplay.textContent = animal.emoji || '❓';
+        }
+        box.appendChild(charDisplay);
+
+        // 符號動畫層
+        const symbol = document.createElement('span');
+        symbol.className = 'box-symbol';
+        symbol.style.filter =
+            `drop-shadow(0 0 24px ${animal.glow1}) drop-shadow(0 0 48px ${animal.glow2})`;
+        if (animal.symbolSvg && SVG_MAP[animal.symbolSvg]) {
+            symbol.innerHTML = SVG_MAP[animal.symbolSvg];
+        } else {
+            symbol.textContent = animal.symbolEmoji || animal.emoji || '❓';
+        }
+        box.appendChild(symbol);
+
+        const href = animal.locked ? null : `game.html?char=${animal.id}`;
+
+        function handleTap(e) {
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            const rect = box.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            ripple.style.left = x + 'px';
+            ripple.style.top  = y + 'px';
+            box.appendChild(ripple);
+            ripple.addEventListener('animationend', () => ripple.remove());
+
+            charDisplay.classList.remove('bouncing');
+            void charDisplay.offsetWidth;
+            charDisplay.classList.add('bouncing');
+
+            box.classList.remove('flashing');
+            void box.offsetWidth;
+            box.classList.add('flashing');
+
+            symbol.classList.remove('popping');
+            void symbol.offsetWidth;
+            symbol.classList.add('popping');
+
+            if (href) setTimeout(() => { location.href = href; }, 820);
+        }
+
+        box.addEventListener('click', handleTap);
+        box.addEventListener('touchstart', e => {
+            e.preventDefault();
+            handleTap(e);
+        }, { passive: false });
+
+        return box;
+    }
     </script>
 </body>
 </html>

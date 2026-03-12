@@ -1,5 +1,6 @@
 node_modules/
 public/sounds/*.mp3
+public/admin.html
 woof-darwin-arm64
 woof_track_source/
 

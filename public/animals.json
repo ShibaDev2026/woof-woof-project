@@ -1,0 +1,60 @@
+{
+  "animals": [
+    {
+      "id": "cat",
+      "emoji": "🐱",
+      "image": null,
+      "symbolSvg": "catpaw",
+      "symbolEmoji": null,
+      "bgFrom": "#c026d3",
+      "bgTo": "#a855f7",
+      "border": "#e879f9",
+      "glow1": "#C084FC",
+      "glow2": "#A855F7",
+      "sound": "meow_loop",
+      "locked": false
+    },
+    {
+      "id": "dog",
+      "emoji": "🐕",
+      "image": null,
+      "symbolSvg": null,
+      "symbolEmoji": "🐾",
+      "bgFrom": "#ea4c00",
+      "bgTo": "#ff6b35",
+      "border": "#fb923c",
+      "glow1": "#FF69B4",
+      "glow2": "#FF1493",
+      "sound": "loop_woof_woof_loop",
+      "locked": false
+    },
+    {
+      "id": "pikachu",
+      "emoji": "⚡",
+      "image": null,
+      "symbolSvg": null,
+      "symbolEmoji": "⚡",
+      "bgFrom": "#ca8a04",
+      "bgTo": "#eab308",
+      "border": "#facc15",
+      "glow1": "#FDE047",
+      "glow2": "#F59E0B",
+      "sound": "pikachu_loop",
+      "locked": false
+    },
+    {
+      "id": "question",
+      "emoji": "❓",
+      "image": null,
+      "symbolSvg": null,
+      "symbolEmoji": "❓",
+      "bgFrom": "#1e1e2e",
+      "bgTo": "#1e1e2e",
+      "border": "#333333",
+      "glow1": "#60A5FA",
+      "glow2": "#3B82F6",
+      "sound": "question_loop",
+      "locked": true
+    }
+  ]
+}
