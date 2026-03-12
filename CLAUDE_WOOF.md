@@ -4,52 +4,132 @@
 
 **「喵喵與汪汪的Loop Woof Woof」** — 一個互動式視覺音樂玩具。
 
-畫面顯示一個黑色背景上的彩虹同心圓，**點擊畫面**會：
-1. 播放 `loop_woof_woof_loop.mp3`（汪汪叫聲循環音效）
-2. 彩色圓環依序閃爍（亮度提升再恢復），產生向外擴散的光波動畫
-3. 音效結束或動畫完成後，顏色重置為初始狀態
+首頁展示多個動物按鈕（2欄滾動格子），點擊進入各自的遊戲畫面，觸發對應音效與同心圓彩虹動畫。
 
-## 視覺設計
-
-- 500×500 Canvas，置中於黑色全螢幕背景
-- 8 層彩虹色同心圓（紅 → 橙 → 黃 → 綠 → 藍 → 深藍 → 紫 → 粉紅）
-- 每層之間有黑色間隔，中心有黑色實心圓
-- 點擊時每層依序亮起，循環 2 次（`loop = 2`）
+---
 
 ## 專案結構
 
 ```
-woof/
-├── main.js                          # Electron 主程序
-├── server.js                        # Express 靜態伺服器（port 3000）
+woof-woof-project/
+├── server.js                        # Express 靜態伺服器 + 動物註冊 API（port 3000）
+├── generate_json.py                 # Python librosa 分析 MP3，自動生成 frequencies JSON
+├── package.json
+├── docker-compose.yml               # web（Node）+ nginx（port 3000 對外）
+├── nginx.conf
+├── .gitignore                       # 排除 sounds/*.mp3、admin.html
 ├── public/
-│   ├── index.html                   # 前端主頁（Canvas 容器）
-│   ├── test.js                      # 核心互動邏輯（繪圖 + 動畫 + 音效）
-│   └── loop_woof_woof_loop.mp3      # 汪汪叫聲音效
-├── woof_track_source/
-│   └── loop_woof_woof_loop.band     # GarageBand 音樂原始檔
-├── Dockerfile                       # Node 14 容器（執行 server.js）
-├── docker-compose.yml               # 對外 port 3000，掛載本地目錄
-├── woof-darwin-arm64                # macOS ARM64 Electron 打包執行檔
-└── package.json                     # electron 29 + express 4
+│   ├── index.html                   # 首頁：動態 2 欄格子，黑底置中，隱藏彩蛋
+│   ├── game.html                    # 遊戲畫面：Canvas 同心圓動畫
+│   ├── app.js                       # 遊戲邏輯（動畫 + 音效）
+│   ├── admin.html                   # 新增動物管理頁（不上傳 git）
+│   ├── animals.json                 # 動物資料來源（id, emoji, image, sound, 顏色等）
+│   ├── images/                      # 動物圖片（PNG/JPG）
+│   ├── sounds/                      # 動物音效 MP3（不上傳 git）
+│   └── frequencies/                 # 音頻分析 JSON（sweep/outer phrase 排程）
+└── woof_track_source/               # GarageBand 原始音樂檔
 ```
 
-## 兩種執行方式
+---
 
-| 方式 | 指令 | 說明 |
-|------|------|------|
-| Electron 桌面 | `npm start` | 開啟原生視窗，直接載入 `index.html` |
-| Docker 網頁 | `docker-compose up` | 瀏覽器開啟 `http://localhost:3000` |
+## 執行方式
 
-## 核心邏輯（test.js）
+```bash
+docker-compose up --build   # 重建並啟動
+docker-compose up           # 一般啟動
+# 瀏覽器開啟 http://localhost:3000
+```
 
-- `drawLayers()` — 從外到內依序繪製彩色層與黑色間隔
-- `adjustBrightness(color, delta)` — 調整 HEX 色碼亮度
-- `canvas click` 事件 — 觸發音效播放 + setTimeout 動畫序列
-- `audio.onended` — 音效結束後重置顏色
+---
+
+## 首頁（public/index.html）
+
+- 黑色背景，`.frame` 最大寬 500px，`margin: auto` 水平垂直置中
+- `fetch('animals.json')` 動態建立格子，新增動物自動往下增加
+- 每個格子有：漸層背景、光暈、跳動動畫、漣漪、符號彈出動畫
+- **隱藏彩蛋**：左上角固定 44×44px 透明區域，隨機抽 1–9 次點擊才跳轉 admin
+  - 目標 URL 以 XOR 混淆（key `[7,3,9,2,5]`，encoded `[102,103,100,107,107,41,107,125,111,105]`）
+
+---
+
+## animals.json 欄位說明
+
+| 欄位 | 說明 |
+|------|------|
+| `id` | 唯一識別（英文） |
+| `emoji` | 無圖片時顯示的 emoji |
+| `image` | 圖片路徑（`/images/xxx.png`）或 null |
+| `symbolSvg` | 彈出動畫用 SVG 名稱（目前支援 `catpaw`） |
+| `symbolEmoji` | 彈出動畫用 emoji（無 symbolSvg 時） |
+| `bgFrom/bgTo` | 格子漸層顏色 |
+| `border` | 格子邊框色 |
+| `glow1/glow2` | 光暈與符號陰影顏色 |
+| `sound` | 音效檔名（對應 `sounds/<sound>.mp3`） |
+| `locked` | `true` 時顯示為鎖定狀態 |
+
+---
+
+## 動畫排程（app.js + frequencies/*.json）
+
+- `fetch('animals.json')` 取得 `sound` 欄位 → 載入對應 MP3 與 frequencies JSON
+- `buildSchedule(phrases)` 將 phrase 轉成帶 `time/layerIdx/flashDuration/brightness` 的事件陣列
+- **sweep**：同一時間段內由內到外閃爍 2 次（聲波感）
+- **outer**：在 phrase 中間點快速閃爍最外圈 2 次
+- 使用 `<audio>` 元素播放（iOS Chrome/Safari 相容）
+
+---
+
+## 後端 API（server.js）
+
+### POST /api/register
+新增或更新動物，接受 `multipart/form-data`：
+- 欄位：`id, emoji, symbolEmoji, bgFrom, bgTo, border, glow1, image（檔案）, mp3（檔案）`
+- 儲存圖片至 `public/images/`、音效至 `public/sounds/`
+- 更新 `public/animals.json`
+- 若有 MP3，自動執行 `python3 generate_json.py "<mp3路徑>"`
+
+---
+
+## generate_json.py
+
+```bash
+python3 generate_json.py public/sounds/example.mp3
+# 輸出：public/frequencies/example.json
+# 若 JSON 已存在則跳過
+```
+
+- 使用 librosa RMS 能量偵測音段
+- 持續 ≥ 0.25s → `sweep`，< 0.25s → `outer`
+
+---
+
+## 貓掌 SVG（symbolSvg: "catpaw"）
+
+目前為白色簡版：3 個小圓（趾球）+ 1 個大橢圓（掌球）：
+```
+circle cx=22 cy=28 r=13
+circle cx=50 cy=18 r=13
+circle cx=78 cy=28 r=13
+ellipse cx=50 cy=72 rx=26 ry=22
+```
+動畫符號尺寸：`min(22vw, 22dvh)`
+
+---
+
+## 目前動物清單
+
+| id | 說明 | 狀態 |
+|----|------|------|
+| cat | 貓（符號：catpaw SVG） | 正常 |
+| dog | 狗（符號：🐾） | 正常 |
+| pikachu | 皮卡丘（符號：⚡） | 正常 |
+| question | 問號 | 鎖定 |
+
+---
 
 ## 注意事項
 
-- Electron 的 `nodeIntegration: true` 已開啟，如擴充功能需留意 XSS 風險
-- `resizeCanvas()` 函式目前為空殼，Canvas 尺寸固定為 500×500
-- Docker 部署使用 Node 14（較舊版本）
+- `public/admin.html` 已加入 `.gitignore`，不會上傳 git
+- `public/sounds/*.mp3` 已加入 `.gitignore`，不會上傳 git
+- Docker 使用 nginx 反向代理，對外 port 3000
+- iOS 音效需在使用者手勢（touchstart）內直接呼叫 `audio.play()`，不能放在 Promise 內
