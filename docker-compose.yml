@@ -7,8 +7,9 @@ services:
     volumes:
       - .:/woof
       - /woof/node_modules
+      - ./logs:/woof/logs       # 持久化爬蟲紀錄，container 重啟後不遺失
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
 
   nginx:
     image: nginx:alpine

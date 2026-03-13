@@ -2,12 +2,14 @@ const express = require('express');
 const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
-const { exec } = require('child_process');
+const { validateAnimalId, safeExecFile }   = require('./middleware/secureTools');
+const { crawlerMiddleware, parseEventsLog } = require('./middleware/crawlerTracker');
 
 const app  = express();
 const port = 3000;
 
 app.use(express.json());
+app.use(crawlerMiddleware);         // 所有請求進來先過爬蟲偵測
 app.use(express.static('public'));
 
 const ANIMALS_PATH = path.join(__dirname, 'public', 'animals.json');
@@ -16,8 +18,8 @@ const ANIMALS_PATH = path.join(__dirname, 'public', 'animals.json');
 const storage = multer.diskStorage({
   destination(req, file, cb) {
     const dir = file.fieldname === 'image'
-      ? path.join(__dirname, 'public', 'images')
-      : path.join(__dirname, 'public', 'sounds');
+      ? path.join(__dirname, 'public', 'assets', 'images')
+      : path.join(__dirname, 'public', 'assets', 'sounds');
     fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
@@ -33,12 +35,14 @@ app.post('/api/register',
   upload.fields([{ name: 'image', maxCount: 1 }, { name: 'mp3', maxCount: 1 }]),
   (req, res) => {
     const { id, emoji, symbolEmoji, bgFrom, bgTo, border, glow1, glow2 } = req.body;
-    if (!id) return res.status(400).json({ error: 'id 必填' });
+    // 驗證 id 格式（防 Path Traversal + Shell Injection），邏輯集中於 secureTools.js
+    const idCheck = validateAnimalId(id);
+    if (!idCheck.valid) return res.status(400).json({ error: idCheck.reason });
 
     const animals = JSON.parse(fs.readFileSync(ANIMALS_PATH, 'utf-8'));
 
     const imagePath = req.files?.image
-      ? '/images/' + id + path.extname(req.files.image[0].originalname)
+      ? '/assets/images/' + id + path.extname(req.files.image[0].originalname)
       : null;
 
     const entry = {
@@ -65,8 +69,9 @@ app.post('/api/register',
 
     // 若有 MP3，自動執行分析腳本
     if (req.files?.mp3) {
-      const mp3Path = path.join('public', 'sounds', id + path.extname(req.files.mp3[0].originalname));
-      exec(`python3 generate_json.py "${mp3Path}"`, (err, stdout) => {
+      const mp3Path = path.join('public', 'assets', 'sounds', id + path.extname(req.files.mp3[0].originalname));
+      // 透過 secureTools.safeExecFile 執行，防止 Shell Injection
+      safeExecFile('python3', ['scripts/generate_json.py', mp3Path], (err, stdout) => {
         if (err) console.error('JSON 分析失敗:', err.message);
         else console.log(stdout.trim());
       });
@@ -75,6 +80,11 @@ app.post('/api/register',
     res.json({ success: true, animal: entry });
   }
 );
+
+// GET /api/crawler-logs — 回傳已解析的爬蟲事件（nginx 限制僅本機可呼叫）
+app.get('/api/crawler-logs', (req, res) => {
+  res.json(parseEventsLog());
+});
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${port}/`);

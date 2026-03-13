@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爬蟲監控歷程</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d0d0d;
+      color: #e0e0e0;
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* 頁首 */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .back-btn {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      color: #aaa;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .back-btn:hover { border-color: #666; color: #fff; }
+    h1 { font-size: 20px; font-weight: 600; }
+    .refresh-btn {
+      margin-left: auto;
+      background: #1a2a4a;
+      border: 1px solid #2244aa;
+      color: #5599ff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .refresh-btn:hover { background: #1e3060; }
+
+    /* 統計卡片 */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .stat-label { font-size: 12px; color: #666; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 700; color: #fff; }
+    .stat-sub   { font-size: 12px; color: #888; margin-top: 4px; }
+
+    /* 圖表列（曲線圖 + 圓餅圖並排） */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 700px) {
+      .charts-row { grid-template-columns: 1fr; }
+    }
+    .chart-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .chart-title {
+      font-size: 14px;
+      color: #aaa;
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+    .chart-wrap     { position: relative; height: 220px; }
+    .chart-wrap-pie { position: relative; height: 220px; }
+
+    /* 篩選列 */
+    .filter-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    select, input {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    select:focus, input:focus { border-color: #555; }
+    .clear-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #888;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .clear-btn:hover { border-color: #555; color: #ccc; }
+
+    /* 事件表格 */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      color: #555;
+      font-weight: 500;
+      border-bottom: 1px solid #222;
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #1e1e1e;
+      white-space: nowrap;
+    }
+    tr:hover td { background: #1a1a1a; }
+
+    /* 來源標籤顏色 */
+    .label {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .label-shodan      { background: #1a2a4a; color: #5599ff; border: 1px solid #2244aa; }
+    .label-censys      { background: #2a1a4a; color: #aa77ff; border: 1px solid #6633aa; }
+    .label-zoomeye     { background: #1a3a2a; color: #44cc88; border: 1px solid #227744; }
+    .label-gitea       { background: #3a2a1a; color: #ffaa44; border: 1px solid #aa6622; }
+    .label-post        { background: #3a1a1a; color: #ff6655; border: 1px solid #aa3322; }
+    .label-env         { background: #2a2a1a; color: #ddcc44; border: 1px solid #888822; }
+    .label-other       { background: #222; color: #888; border: 1px solid #333; }
+
+    /* HTTP method 顏色 */
+    .method-get  { color: #44aaff; }
+    .method-post { color: #ff7755; }
+
+    .ip   { font-family: monospace; color: #aaa; }
+    .path { color: #888; font-family: monospace; }
+    .time { color: #555; font-size: 12px; }
+
+    /* User-Agent tooltip */
+    .ua-cell { color: #444; cursor: default; }
+    .ua-cell:hover { color: #888; }
+
+    /* 分頁列 */
+    .pagination-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .pagination-info { font-size: 13px; color: #555; }
+    .pagination-controls { display: flex; align-items: center; gap: 6px; }
+    .page-btn {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #888;
+      padding: 5px 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      min-width: 34px;
+      text-align: center;
+    }
+    .page-btn:hover:not(:disabled) { border-color: #555; color: #ccc; }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
+    .page-btn.active { background: #1e2d4a; border-color: #2244aa; color: #5599ff; }
+    .page-size-wrap { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #555; }
+
+    /* 無資料 / 載入中 */
+    .no-data { text-align: center; color: #444; padding: 40px; }
+    .error-msg { text-align: center; color: #ff6655; padding: 40px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <a href="admin.html" class="back-btn">← 返回</a>
+    <h1>🛡️ 爬蟲監控歷程</h1>
+    <button class="refresh-btn" onclick="loadData()">↻ 重新整理</button>
+  </div>
+
+  <!-- 統計卡片 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">總偵測事件</div>
+      <div class="stat-value" id="total-count">—</div>
+      <div class="stat-sub">累計紀錄</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">獨立 IP 數</div>
+      <div class="stat-value" id="unique-ips">—</div>
+      <div class="stat-sub">不重複來源</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">最活躍來源</div>
+      <div class="stat-value" id="top-source" style="font-size:18px;margin-top:4px;">—</div>
+      <div class="stat-sub" id="top-source-count">—</div>
+    </div>
+  </div>
+
+  <!-- 圖表列：曲線圖 + 圓餅圖 -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">各來源攻擊頻率（過去 24 小時，每小時統計）</div>
+      <div class="chart-wrap">
+        <canvas id="attackChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">來源分佈（總次數）</div>
+      <div class="chart-wrap-pie">
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- 篩選列 -->
+  <div class="filter-row">
+    <select id="filter-label"><option value="">所有來源</option></select>
+    <select id="filter-method">
+      <option value="">所有方法</option>
+      <option value="GET">GET</option>
+      <option value="POST">POST</option>
+    </select>
+    <input id="filter-ip" type="text" placeholder="搜尋 IP…" style="width:160px;">
+    <button class="clear-btn" onclick="clearFilters()">清除篩選</button>
+    <div class="page-size-wrap" style="margin-left:auto;">
+      每頁顯示
+      <select id="page-size">
+        <option value="10">10</option>
+        <option value="20" selected>20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+      筆
+    </div>
+  </div>
+
+  <!-- 事件表格 -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>時間</th>
+          <th>來源</th>
+          <th>方法</th>
+          <th>IP</th>
+          <th>路徑</th>
+          <th>User-Agent</th>
+        </tr>
+      </thead>
+      <tbody id="event-table-body">
+        <tr><td colspan="6" class="no-data">載入中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 分頁列 -->
+  <div class="pagination-row">
+    <div class="pagination-info" id="pagination-info">—</div>
+    <div class="pagination-controls" id="pagination-controls"></div>
+  </div>
+
+<script>
+  // ── 來源標籤對應 CSS class（未知來源 fallback 到 label-other）──────────────
+  const LABEL_CLASS = {
+    'Shodan':      'label-shodan',
+    'Censys':      'label-censys',
+    'ZoomEye':     'label-zoomeye',
+    'Gitea探測':   'label-gitea',
+    '異常POST掃描': 'label-post',
+    '環境變數探測': 'label-env',
+    '管理頁探測':  'label-post',
+    'Shell探測':   'label-post',
+    'Git洩漏探測': 'label-env',
+  };
+
+  // ── 來源對應顏色（曲線圖與圓餅圖共用）────────────────────────────────────────
+  const LABEL_COLOR = {
+    'Shodan':      '#5599ff',
+    'Censys':      '#aa77ff',
+    'ZoomEye':     '#44cc88',
+    'Gitea探測':   '#ffaa44',
+    '異常POST掃描': '#ff6655',
+    '環境變數探測': '#ddcc44',
+    '管理頁探測':  '#ff8866',
+    'Shell探測':   '#ff4444',
+    'Git洩漏探測': '#ccaa33',
+    'Masscan':     '#44ddff',
+    'Zgrab':       '#ff77bb',
+    'Nmap':        '#88bbff',
+    'Nuclei':      '#ffcc44',
+  };
+
+  // ── 全域資料狀態 ───────────────────────────────────────────────────────────
+  let ALL_EVENTS     = [];
+  let filteredEvents = [];
+  let currentPage    = 1;
+  let lineChart      = null;
+  let pieChart       = null;
+
+  // ── 從 API 取得資料並初始化頁面 ───────────────────────────────────────────
+  async function loadData() {
+    document.getElementById('event-table-body').innerHTML =
+      '<tr><td colspan="6" class="no-data">載入中…</td></tr>';
+
+    try {
+      const res  = await fetch('/api/crawler-logs');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      ALL_EVENTS = await res.json();
+    } catch (err) {
+      document.getElementById('event-table-body').innerHTML =
+        `<tr><td colspan="6" class="error-msg">無法取得資料：${err.message}</td></tr>`;
+      return;
+    }
+
+    renderStats(ALL_EVENTS);
+    renderLineChart(ALL_EVENTS);
+    renderPieChart(ALL_EVENTS);
+    populateLabelFilter(ALL_EVENTS);
+    renderTable(ALL_EVENTS);
+  }
+
+  // ── 統計卡片 ───────────────────────────────────────────────────────────────
+  function renderStats(events) {
+    document.getElementById('total-count').textContent = events.length;
+    document.getElementById('unique-ips').textContent  = new Set(events.map(e => e.ip)).size;
+
+    const counts = {};
+    events.forEach(e => { counts[e.label] = (counts[e.label] || 0) + 1; });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    if (top) {
+      document.getElementById('top-source').textContent       = top[0];
+      document.getElementById('top-source-count').textContent = `${top[1]} 次`;
+    } else {
+      document.getElementById('top-source').textContent       = '—';
+      document.getElementById('top-source-count').textContent = '尚無紀錄';
+    }
+  }
+
+  // ── 曲線圖：過去 24 小時每小時攻擊次數 ────────────────────────────────────
+  function renderLineChart(events) {
+    const now    = new Date();
+    const labels = [];
+    const hourTs = [];   // 每個 label 對應的整點 timestamp（UTC）
+    for (let i = 23; i >= 0; i--) {
+      const d = new Date(now - i * 3600000);
+      d.setUTCMinutes(0, 0, 0);
+      labels.push(`${String(d.getUTCHours()).padStart(2,'0')}:00`);
+      hourTs.push(d.getTime());
+    }
+
+    const sources  = [...new Set(events.map(e => e.label))];
+    const datasets = sources.map(src => {
+      const data = hourTs.map(ts => {
+        return events.filter(e => {
+          if (e.label !== src) return false;
+          const t = new Date(e.time);
+          t.setUTCMinutes(0, 0, 0);
+          return t.getTime() === ts;
+        }).length;
+      });
+      const color = LABEL_COLOR[src] || '#888888';
+      return { label: src, data, borderColor: color, backgroundColor: color + '22', tension: 0.4, pointRadius: 3, pointHoverRadius: 6, fill: false };
+    });
+
+    // 銷毀舊圖表再重建，避免重新整理時重複渲染
+    if (lineChart) lineChart.destroy();
+    lineChart = new Chart(document.getElementById('attackChart'), {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { labels: { color: '#888', font: { size: 12 }, boxWidth: 12 } },
+          tooltip: { backgroundColor: '#1e1e1e', borderColor: '#333', borderWidth: 1, titleColor: '#aaa', bodyColor: '#ccc' }
+        },
+        scales: {
+          x: { ticks: { color: '#444', font: { size: 11 }, maxRotation: 0 }, grid: { color: '#1a1a1a' } },
+          y: { ticks: { color: '#444', stepSize: 1 }, grid: { color: '#1e1e1e' }, min: 0 }
+        }
+      }
+    });
+  }
+
+  // ── 圓餅圖：各來源總次數分佈 ──────────────────────────────────────────────
+  function renderPieChart(events) {
+    const counts = {};
+    events.forEach(e => { counts[e.label] = (counts[e.label] || 0) + 1; });
+    const labels = Object.keys(counts);
+    const data   = labels.map(l => counts[l]);
+    const colors = labels.map(l => LABEL_COLOR[l] || '#888888');
+
+    if (pieChart) pieChart.destroy();
+    pieChart = new Chart(document.getElementById('pieChart'), {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1.5, hoverOffset: 6 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#888', font: { size: 11 }, boxWidth: 10, padding: 10 } },
+          tooltip: {
+            backgroundColor: '#1e1e1e', borderColor: '#333', borderWidth: 1, titleColor: '#aaa', bodyColor: '#ccc',
+            callbacks: {
+              label: (ctx) => {
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct   = ((ctx.parsed / total) * 100).toFixed(1);
+                return ` ${ctx.label}：${ctx.parsed} 次（${pct}%）`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ── 篩選下拉填入來源選項 ───────────────────────────────────────────────────
+  function populateLabelFilter(events) {
+    const sel     = document.getElementById('filter-label');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">所有來源</option>';
+    [...new Set(events.map(e => e.label))].sort().forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      if (s === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  // ── 分頁：取得每頁筆數 ─────────────────────────────────────────────────────
+  function getPageSize() {
+    return parseInt(document.getElementById('page-size').value, 10);
+  }
+
+  // ── 事件表格渲染（設定資料並重置到第一頁）────────────────────────────────
+  function renderTable(events) {
+    filteredEvents = events;
+    currentPage    = 1;
+    renderPage();
+  }
+
+  function renderPage() {
+    const pageSize   = getPageSize();
+    const totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const start = (currentPage - 1) * pageSize;
+    const slice = filteredEvents.slice(start, start + pageSize);
+    const tbody = document.getElementById('event-table-body');
+
+    if (filteredEvents.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">無符合條件的事件</td></tr>';
+    } else {
+      tbody.innerHTML = slice.map(e => {
+        const labelClass  = LABEL_CLASS[e.label] || 'label-other';
+        const methodClass = e.method === 'POST' ? 'method-post' : 'method-get';
+        const timeStr     = new Date(e.time).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
+        const safeUa      = e.ua.replace(/"/g, '&quot;');
+        return `
+          <tr>
+            <td class="time">${timeStr}</td>
+            <td><span class="label ${labelClass}">${e.label}</span></td>
+            <td class="${methodClass}">${e.method}</td>
+            <td class="ip">${e.ip}</td>
+            <td class="path">${e.path}</td>
+            <td class="ua-cell" title="${safeUa}">⋯ hover 查看</td>
+          </tr>`;
+      }).join('');
+    }
+
+    const endIdx = Math.min(start + pageSize, filteredEvents.length);
+    document.getElementById('pagination-info').textContent =
+      filteredEvents.length === 0
+        ? '無資料'
+        : `第 ${start + 1}–${endIdx} 筆，共 ${filteredEvents.length} 筆`;
+
+    renderPaginationControls(totalPages);
+  }
+
+  function renderPaginationControls(totalPages) {
+    const wrap = document.getElementById('pagination-controls');
+    wrap.innerHTML = '';
+
+    const prev = document.createElement('button');
+    prev.className = 'page-btn';
+    prev.textContent = '‹';
+    prev.disabled = currentPage === 1;
+    prev.onclick = () => { currentPage--; renderPage(); };
+    wrap.appendChild(prev);
+
+    getPageNumbers(currentPage, totalPages).forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = p === '…' ? 'page-btn' : ('page-btn' + (p === currentPage ? ' active' : ''));
+      btn.textContent = p;
+      btn.disabled    = p === '…';
+      if (p !== '…') btn.onclick = () => { currentPage = p; renderPage(); };
+      wrap.appendChild(btn);
+    });
+
+    const next = document.createElement('button');
+    next.className = 'page-btn';
+    next.textContent = '›';
+    next.disabled = currentPage === totalPages;
+    next.onclick = () => { currentPage++; renderPage(); };
+    wrap.appendChild(next);
+  }
+
+  // 產生頁碼陣列，超過 7 頁時中間用省略號收合
+  function getPageNumbers(current, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    if (current <= 4)          return [1, 2, 3, 4, 5, '…', total];
+    if (current >= total - 3)  return [1, '…', total-4, total-3, total-2, total-1, total];
+    return [1, '…', current - 1, current, current + 1, '…', total];
+  }
+
+  // ── 篩選邏輯 ───────────────────────────────────────────────────────────────
+  function applyFilters() {
+    const label  = document.getElementById('filter-label').value;
+    const method = document.getElementById('filter-method').value;
+    const ip     = document.getElementById('filter-ip').value.trim().toLowerCase();
+    renderTable(ALL_EVENTS.filter(e =>
+      (!label  || e.label === label) &&
+      (!method || e.method === method) &&
+      (!ip     || e.ip.includes(ip))
+    ));
+  }
+
+  function clearFilters() {
+    document.getElementById('filter-label').value  = '';
+    document.getElementById('filter-method').value = '';
+    document.getElementById('filter-ip').value     = '';
+    renderTable(ALL_EVENTS);
+  }
+
+  ['filter-label', 'filter-method', 'filter-ip'].forEach(id => {
+    document.getElementById(id).addEventListener('input',  applyFilters);
+    document.getElementById(id).addEventListener('change', applyFilters);
+  });
+  document.getElementById('page-size').addEventListener('change', () => {
+    currentPage = 1;
+    renderPage();
+  });
+
+  // ── 初始化 ─────────────────────────────────────────────────────────────────
+  loadData();
+</script>
+</body>
+</html>

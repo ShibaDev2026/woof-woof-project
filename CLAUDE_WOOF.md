@@ -100,6 +100,9 @@ python3 generate_json.py public/sounds/example.mp3
 
 - 使用 librosa RMS 能量偵測音段
 - 持續 ≥ 0.25s → `sweep`，< 0.25s → `outer`
+- **注意**：自動分類後需人工確認節奏是否符合音樂感
+  - 短音群組（多個 outer）可手動合併為一個 sweep，讓動畫節奏更自然
+  - 範例：貓叫前段 6 個 outer 各自合併成 2 個 sweep，對應「登愣登愣」節奏
 
 ---
 
@@ -120,9 +123,9 @@ ellipse cx=50 cy=72 rx=26 ry=22
 
 | id | 說明 | 狀態 |
 |----|------|------|
-| cat | 貓（符號：catpaw SVG） | 正常 |
-| dog | 狗（符號：🐾） | 正常 |
-| pikachu | 皮卡丘（符號：⚡） | 正常 |
+| cat | 貓（符號：catpaw SVG，sound: loop_meow_meow_loop） | 正常 |
+| dog | 狗（符號：🐾，sound: loop_woof_woof_loop） | 正常 |
+| pikachu | 皮卡丘（符號：⚡，sound: pikachu_loop） | 正常 |
 | question | 問號 | 鎖定 |
 
 ---

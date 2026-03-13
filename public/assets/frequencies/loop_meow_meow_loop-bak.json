@@ -1,0 +1,31 @@
+{
+  "audioFile": "loop_meow_meow_loop.mp3",
+  "gapThreshold": 0.08,
+  "phrases": [
+    {
+      "type": "sweep",
+      "start": 0.058,
+      "end": 0.650
+    },
+    {
+      "type": "sweep",
+      "start": 1.068,
+      "end": 1.660
+    },
+    {
+      "type": "sweep",
+      "start": 2.067,
+      "end": 2.380
+    },
+    {
+      "type": "sweep",
+      "start": 2.473,
+      "end": 2.798
+    },
+    {
+      "type": "sweep",
+      "start": 2.891,
+      "end": 3.495
+    }
+  ]
+}

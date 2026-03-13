@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 使用 <audio> 元素播放，iOS 相容性最佳
     var audio = null;
     function initAudio(name) {
-        audio = new Audio('sounds/' + name + '.mp3');
+        audio = new Audio('/assets/sounds/' + name + '.mp3');
         audio.preload = 'auto';
         audio.addEventListener('ended', function () {
             colors = initialColors.slice();
@@ -40,13 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 從 animals.json 取得 sound 欄位，再載入音訊與排程
-    fetch('animals.json')
+    fetch('/animals.json')
         .then(r => r.json())
         .then(data => {
             var animal = data.animals.find(a => a.id === char);
             baseName = (animal && animal.sound) ? animal.sound : char;
             initAudio(baseName);
-            return fetch('frequencies/' + baseName + '.json');
+            return fetch('/assets/frequencies/' + baseName + '.json');
         })
         .then(r => r.json())
         .then(config => { schedule = buildSchedule(config.phrases, initialColors.length); })

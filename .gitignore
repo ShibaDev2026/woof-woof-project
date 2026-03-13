@@ -1,8 +1,14 @@
 node_modules/
-public/sounds/*.mp3
-public/admin.html
+public/assets/sounds/*.mp3
+public/pages/admin.html
 woof-darwin-arm64
 woof_track_source/
+
+# 爬蟲紀錄（含 IP 等敏感資訊，不進 repo）
+logs/
+
+# 預覽用暫存頁，不進 repo
+public/pages/monitor-preview.html
 
 .DS_Store
 **/.DS_Store

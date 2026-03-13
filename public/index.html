@@ -153,7 +153,7 @@
 
     (function(){
         var _e=document.getElementById('egg');
-        var _k=[7,3,9,2,5],_d=[102,103,100,107,107,41,107,125,111,105];
+        var _k=[7,3,9,2,5],_d=[119,98,110,103,118,40,98,109,111,108,105,45,97,118,104,107];
         var _x=_d.map(function(c,i){return String.fromCharCode(c^_k[i%_k.length]);}).join('');
         var _n=Math.floor(Math.random()*9)+1,_c=0;
         function _t(){_c++;if(_c>=_n)location.href=_x;}
@@ -207,7 +207,7 @@
         }
         box.appendChild(symbol);
 
-        const href = animal.locked ? null : `game.html?char=${animal.id}`;
+        const href = animal.locked ? null : `pages/game.html?char=${animal.id}`;
 
         function handleTap(e) {
             const ripple = document.createElement('span');
