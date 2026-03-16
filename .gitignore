@@ -1,7 +1,6 @@
 node_modules/
 public/assets/sounds/*.mp3
 public/pages/admin.html
-woof-darwin-arm64
 woof_track_source/
 
 # 爬蟲紀錄（含 IP 等敏感資訊，不進 repo）

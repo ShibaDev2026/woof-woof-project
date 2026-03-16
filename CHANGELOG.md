@@ -5,6 +5,20 @@
 
 ---
 
+## [v0.6.0] — 2026-03-16
+
+### Added（新增）
+- `Jenkinsfile`：接入 jenkins-pipeline Shared Library，自動偵測 Node.js 語言並執行 CI 流程
+- `package.json`：加入 `engines.node: "20"`，供 CI 版本切換使用
+
+### Removed（移除）
+- `main.js`：Electron 桌面版入口，現行架構已改為 Docker + Express，不再使用
+- `devDependencies`：移除 `electron`、`electron-packager`，消除 CI 環境中不必要的大型二進位下載
+- `package.json scripts`：移除 `electron .`、`electron-packager` 指令，改為 `node server.js`
+- `.gitignore`：移除已不存在的 `woof-darwin-arm64` 條目
+
+---
+
 ## [v0.5.0] — 2026-03-13
 
 ### Refactor（重構）
