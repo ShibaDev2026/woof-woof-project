@@ -1,8 +1,8 @@
 const fs   = require('fs');
 const path = require('path');
 
-// ─── 路徑設定 ──────────────────────────────────────────────────────────────────
-const LOG_DIR      = path.join(__dirname, 'logs', 'crawler');
+// ─── 路徑設定（指向專案根目錄的 logs/crawler，對應 docker-compose volume 掛載）──
+const LOG_DIR      = path.join(__dirname, '..', 'logs', 'crawler');
 const EVENTS_LOG   = path.join(LOG_DIR, 'events.log');
 const SUSPECTS_JSON = path.join(LOG_DIR, 'suspects.json');
 
